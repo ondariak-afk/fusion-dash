@@ -231,7 +231,7 @@
       <div class="fuel-form">
         <div class="fuel-field">
           <label>Gallons</label>
-          <input type="number" id="f-gal" placeholder="10.5" step="0.1" inputmode="decimal" />
+          <input type="number" id="f-gal" placeholder="max 17.5" step="0.1" inputmode="decimal" />
         </div>
         <div class="fuel-field">
           <label>Price / gal</label>
@@ -325,6 +325,7 @@ const DEFAULTS = {
     {id:'manual', label:'Owner\'s manual located', note:'Glove box or download from Ford\'s site', done:false},
     {id:'spare', label:'Spare tire & jack verified', note:'Check pressure + confirm lug wrench present', done:false},
     {id:'washer', label:'Washer fluid topped off', note:'', done:false},
+    {id:'second-key', label:'Get second key cut', note:'Dealer has contact for cheapest local option — ask them for it', done:false},
     {id:'emission', label:'Emissions check (if required)', note:'Indiana: most counties exempt, check yours', done:false},
     {id:'emergency', label:'Emergency contact card in car', note:'Useful if phone dies', done:false},
     {id:'recall-brake', label:'Recall 23S12 — brake hose replacement', note:'REMEDY AVAILABLE — schedule at D-Patrick Ford, free parts & labor', done:false},
@@ -336,6 +337,10 @@ const DEFAULTS = {
   budget: {payment:0, insurance:0, fuel:0, maintenance:0, parking:0, other:0},
   fuelLog: [],
   logEntries: [
+    {date:'Apr 8, 2026', note:'Purchased from D-Patrick Ford · 112,000 mi · Full tank of gas included at delivery'},
+    {date:'Apr 8, 2026', note:'Brakes redone at dealer prior to sale — front & rear inspected/replaced'},
+    {date:'Apr 8, 2026', note:'Wipers inspected by dealer — passed, no replacement needed'},
+    {date:'Apr 8, 2026', note:'Note: only 1 key — dealer has contact for cheapest locksmith to cut a second'},
     {date:'Aug 27, 2025', note:'Oil & filter changed — Best-One Tire & Service, Vincennes IN · 105,409 mi'},
     {date:'Oct 6, 2023', note:'Tire mounted, balanced & replaced (1 tire) — Best One Tire & Service, Vincennes IN · 82,286 mi'},
     {date:'Dec 20, 2022', note:'Tire(s) replaced — Walmart Auto Care, Vincennes IN · 71,263 mi'},
