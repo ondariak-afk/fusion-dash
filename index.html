@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#0f0f0f" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-inset" />
+<meta name="apple-mobile-web-app-title" content="Fusion" />
+<title>Fusion Dashboard</title>
+<link rel="manifest" href="manifest.json" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #0f0f0f;
+    --bg2: #1a1a1a;
+    --bg3: #242424;
+    --border: rgba(255,255,255,0.08);
+    --border2: rgba(255,255,255,0.14);
+    --text: #f0f0ee;
+    --text2: #8a8a85;
+    --text3: #555550;
+    --accent: #c8a96e;
+    --accent2: #8b6f3e;
+    --ok: #4caf82;
+    --warn: #e8a838;
+    --danger: #e05555;
+    --ok-bg: rgba(76,175,130,0.12);
+    --warn-bg: rgba(232,168,56,0.12);
+    --danger-bg: rgba(224,85,85,0.12);
+    --mono: 'DM Mono', monospace;
+    --sans: 'DM Sans', system-ui, sans-serif;
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bot: env(safe-area-inset-bottom, 0px);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 15px; }
+  body { display: flex; flex-direction: column; max-width: 480px; margin: 0 auto; }
+
+  /* Header */
+  .header {
+    padding: calc(var(--safe-top) + 14px) 20px 14px;
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 0.5px solid var(--border);
+    background: var(--bg);
+    position: sticky; top: 0; z-index: 10;
+  }
+  .header-title { font-family: var(--mono); font-size: 13px; color: var(--accent); letter-spacing: 0.08em; text-transform: uppercase; }
+  .header-mi { font-family: var(--mono); font-size: 13px; color: var(--text2); }
+  .header-mi span { color: var(--text); }
+
+  /* Metrics strip */
+  .metrics { display: grid; grid-template-columns: 1fr 1fr 1fr; border-bottom: 0.5px solid var(--border); }
+  .metric { padding: 14px 16px; border-right: 0.5px solid var(--border); }
+  .metric:last-child { border-right: none; }
+  .metric-label { font-size: 10px; font-family: var(--mono); text-transform: uppercase; letter-spacing: 0.06em; color: var(--text3); margin-bottom: 5px; }
+  .metric-val { font-family: var(--mono); font-size: 16px; font-weight: 500; color: var(--text); line-height: 1; }
+  .metric-val.ok { color: var(--ok); }
+  .metric-val.warn { color: var(--warn); }
+  .metric-val.danger { color: var(--danger); }
+  .metric-sub { font-size: 10px; color: var(--text3); margin-top: 3px; font-family: var(--mono); }
+
+  /* Tabs */
+  .tabs { display: flex; overflow-x: auto; border-bottom: 0.5px solid var(--border); scrollbar-width: none; }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab { padding: 11px 18px; font-size: 12px; font-family: var(--mono); letter-spacing: 0.05em; text-transform: uppercase; color: var(--text3); cursor: pointer; white-space: nowrap; border-bottom: 2px solid transparent; transition: color 0.15s, border-color 0.15s; }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* Content */
+  .content { flex: 1; overflow-y: auto; padding: 20px 16px calc(var(--safe-bot) + 20px); }
+  .section { display: none; }
+  .section.active { display: block; }
+
+  /* Cards */
+  .card { background: var(--bg2); border: 0.5px solid var(--border); border-radius: 12px; margin-bottom: 12px; overflow: hidden; }
+  .card-head { padding: 12px 16px; border-bottom: 0.5px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .card-head-title { font-size: 11px; font-family: var(--mono); text-transform: uppercase; letter-spacing: 0.07em; color: var(--text2); }
+  .card-body { padding: 4px 0; }
+
+  /* Maintenance rows */
+  .maint-row { padding: 12px 16px; border-bottom: 0.5px solid var(--border); display: flex; align-items: center; gap: 12px; }
+  .maint-row:last-child { border-bottom: none; }
+  .maint-info { flex: 1; min-width: 0; }
+  .maint-name { font-size: 14px; font-weight: 400; color: var(--text); }
+  .maint-int { font-size: 11px; color: var(--text3); margin-top: 2px; font-family: var(--mono); }
+  .maint-bar { height: 3px; background: var(--bg3); border-radius: 99px; margin-top: 6px; overflow: hidden; }
+  .maint-fill { height: 100%; border-radius: 99px; transition: width 0.3s; }
+  .fill-ok { background: var(--ok); }
+  .fill-warn { background: var(--warn); }
+  .fill-danger { background: var(--danger); }
+  .badge { font-family: var(--mono); font-size: 11px; padding: 3px 8px; border-radius: 6px; white-space: nowrap; }
+  .badge-ok { background: var(--ok-bg); color: var(--ok); }
+  .badge-warn { background: var(--warn-bg); color: var(--warn); }
+  .badge-danger { background: var(--danger-bg); color: var(--danger); }
+
+  /* Doc rows */
+  .doc-row { padding: 12px 16px; border-bottom: 0.5px solid var(--border); display: flex; align-items: flex-start; gap: 12px; cursor: pointer; user-select: none; active: background: var(--bg3); }
+  .doc-row:last-child { border-bottom: none; }
+  .doc-row:active { background: var(--bg3); }
+  .check { width: 20px; height: 20px; border-radius: 6px; border: 1.5px solid var(--border2); flex-shrink: 0; margin-top: 1px; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+  .check.done { background: var(--ok); border-color: var(--ok); }
+  .check-icon { font-size: 12px; color: #fff; display: none; }
+  .check.done .check-icon { display: block; }
+  .doc-text { flex: 1; }
+  .doc-label { font-size: 14px; color: var(--text); transition: color 0.15s; }
+  .doc-label.done { color: var(--text3); text-decoration: line-through; }
+  .doc-note { font-size: 11px; color: var(--text3); margin-top: 2px; }
+
+  /* Budget */
+  .budget-row { padding: 11px 16px; border-bottom: 0.5px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .budget-row:last-child { border-bottom: none; }
+  .budget-label { font-size: 13px; color: var(--text2); }
+  .budget-input-wrap { display: flex; align-items: center; gap: 6px; }
+  .budget-symbol { font-family: var(--mono); font-size: 13px; color: var(--text3); }
+  .budget-input { background: var(--bg3); border: 0.5px solid var(--border2); border-radius: 8px; padding: 6px 10px; font-family: var(--mono); font-size: 14px; color: var(--text); width: 90px; text-align: right; outline: none; }
+  .budget-input:focus { border-color: var(--accent2); }
+  .budget-total-row { padding: 14px 16px; display: flex; justify-content: space-between; align-items: center; border-top: 0.5px solid var(--border2); }
+  .budget-total-label { font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text2); }
+  .budget-total-val { font-family: var(--mono); font-size: 20px; font-weight: 500; color: var(--accent); }
+
+  /* Log & fuel inputs */
+  .log-form { padding: 12px 16px; border-bottom: 0.5px solid var(--border); display: flex; gap: 8px; align-items: center; }
+  .log-input { flex: 1; background: var(--bg3); border: 0.5px solid var(--border2); border-radius: 8px; padding: 8px 12px; font-family: var(--sans); font-size: 13px; color: var(--text); outline: none; }
+  .log-input::placeholder { color: var(--text3); }
+  .log-input:focus { border-color: var(--accent2); }
+  .log-btn { background: var(--bg3); border: 0.5px solid var(--border2); border-radius: 8px; padding: 8px 14px; font-family: var(--mono); font-size: 12px; color: var(--accent); cursor: pointer; white-space: nowrap; }
+  .log-btn:active { background: var(--bg2); }
+  .log-entry { padding: 10px 16px; border-bottom: 0.5px solid var(--border); display: flex; justify-content: space-between; gap: 8px; }
+  .log-entry:last-child { border-bottom: none; }
+  .log-note { font-size: 13px; color: var(--text); }
+  .log-date { font-family: var(--mono); font-size: 11px; color: var(--text3); white-space: nowrap; flex-shrink: 0; margin-top: 1px; }
+  .fuel-form { padding: 12px 16px; border-bottom: 0.5px solid var(--border); display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .fuel-field label { font-size: 10px; font-family: var(--mono); text-transform: uppercase; letter-spacing: 0.05em; color: var(--text3); display: block; margin-bottom: 4px; }
+  .fuel-field input { width: 100%; background: var(--bg3); border: 0.5px solid var(--border2); border-radius: 8px; padding: 8px 10px; font-family: var(--mono); font-size: 14px; color: var(--text); outline: none; }
+  .fuel-field input:focus { border-color: var(--accent2); }
+  .fuel-log-btn { grid-column: 1 / -1; }
+  .empty-state { padding: 24px 16px; font-size: 13px; color: var(--text3); font-family: var(--mono); text-align: center; }
+
+  /* Settings */
+  .setting-row { padding: 12px 16px; border-bottom: 0.5px solid var(--border); }
+  .setting-row:last-child { border-bottom: none; }
+  .setting-label { font-size: 11px; font-family: var(--mono); text-transform: uppercase; letter-spacing: 0.06em; color: var(--text3); margin-bottom: 6px; }
+  .setting-input { width: 100%; background: var(--bg3); border: 0.5px solid var(--border2); border-radius: 8px; padding: 9px 12px; font-family: var(--mono); font-size: 15px; color: var(--text); outline: none; }
+  .setting-input:focus { border-color: var(--accent2); }
+  .save-btn { width: 100%; padding: 13px; background: var(--accent); color: #0f0f0f; border: none; border-radius: 10px; font-family: var(--mono); font-size: 13px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; margin-top: 16px; }
+  .save-btn:active { opacity: 0.85; }
+
+  .section-gap { height: 12px; }
+  .install-banner { background: var(--warn-bg); border: 0.5px solid rgba(232,168,56,0.3); border-radius: 10px; padding: 12px 14px; margin-bottom: 16px; display: none; }
+  .install-banner p { font-size: 13px; color: var(--warn); line-height: 1.5; }
+  .install-banner p strong { font-weight: 500; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-title">Ford Fusion</div>
+  <div class="header-mi" id="header-mi">mileage: <span id="h-mi">—</span></div>
+</div>
+
+<div class="metrics">
+  <div class="metric">
+    <div class="metric-label">next oil</div>
+    <div class="metric-val" id="m-oil">—</div>
+    <div class="metric-sub" id="m-oil-sub">set mileage</div>
+  </div>
+  <div class="metric">
+    <div class="metric-label">reg. exp.</div>
+    <div class="metric-val" id="m-reg">—</div>
+    <div class="metric-sub" id="m-reg-sub">not set</div>
+  </div>
+  <div class="metric">
+    <div class="metric-label">monthly</div>
+    <div class="metric-val" id="m-cost">$0</div>
+    <div class="metric-sub">estimated</div>
+  </div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('maint')">Service</div>
+  <div class="tab" onclick="switchTab('docs')">Docs</div>
+  <div class="tab" onclick="switchTab('budget')">Budget</div>
+  <div class="tab" onclick="switchTab('fuel')">Fuel</div>
+  <div class="tab" onclick="switchTab('log')">Log</div>
+  <div class="tab" onclick="switchTab('settings')">Settings</div>
+</div>
+
+<div class="content">
+
+  <!-- Install banner (shown on iOS) -->
+  <div class="install-banner" id="install-banner">
+    <p>Install this app: tap the <strong>Share</strong> button in Safari, then <strong>Add to Home Screen</strong> for offline access.</p>
+  </div>
+
+  <!-- MAINTENANCE -->
+  <div id="maint" class="section active">
+    <div class="card">
+      <div class="card-head"><span class="card-head-title">Service Intervals</span></div>
+      <div class="card-body" id="maint-list"></div>
+    </div>
+  </div>
+
+  <!-- DOCS -->
+  <div id="docs" class="section">
+    <div class="card">
+      <div class="card-head">
+        <span class="card-head-title">Checklist</span>
+        <span id="docs-count" style="font-family:var(--mono);font-size:11px;color:var(--text3);"></span>
+      </div>
+      <div class="card-body" id="doc-list"></div>
+    </div>
+  </div>
+
+  <!-- BUDGET -->
+  <div id="budget" class="section">
+    <div class="card">
+      <div class="card-head"><span class="card-head-title">Monthly Expenses</span></div>
+      <div class="card-body" id="budget-list"></div>
+      <div class="budget-total-row">
+        <span class="budget-total-label">Total / month</span>
+        <span class="budget-total-val" id="budget-total">$0</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- FUEL -->
+  <div id="fuel" class="section">
+    <div class="card">
+      <div class="card-head"><span class="card-head-title">Log Fill-up</span></div>
+      <div class="fuel-form">
+        <div class="fuel-field">
+          <label>Gallons</label>
+          <input type="number" id="f-gal" placeholder="10.5" step="0.1" inputmode="decimal" />
+        </div>
+        <div class="fuel-field">
+          <label>Price / gal</label>
+          <input type="number" id="f-price" placeholder="3.29" step="0.01" inputmode="decimal" />
+        </div>
+        <div class="fuel-field">
+          <label>Odometer</label>
+          <input type="number" id="f-odo" placeholder="optional" inputmode="numeric" />
+        </div>
+        <div class="fuel-field">
+          <label>Total $</label>
+          <input type="number" id="f-total" placeholder="auto" step="0.01" inputmode="decimal" />
+        </div>
+        <button class="log-btn fuel-log-btn" onclick="logFuel()">+ Add Fill-up</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-head">
+        <span class="card-head-title">History</span>
+        <span id="fuel-avg" style="font-family:var(--mono);font-size:11px;color:var(--text3);"></span>
+      </div>
+      <div id="fuel-log"></div>
+    </div>
+  </div>
+
+  <!-- LOG -->
+  <div id="log" class="section">
+    <div class="card">
+      <div class="card-head"><span class="card-head-title">Service History</span></div>
+      <div class="log-form">
+        <input class="log-input" id="log-note" placeholder="e.g. Oil change, 47,200 mi — Jiffy Lube" />
+        <button class="log-btn" onclick="addLog()">Add</button>
+      </div>
+      <div id="log-list"></div>
+    </div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div id="settings" class="section">
+    <div class="card">
+      <div class="card-head"><span class="card-head-title">Vehicle</span></div>
+      <div class="setting-row">
+        <div class="setting-label">Current Mileage</div>
+        <input class="setting-input" type="number" id="s-mi" placeholder="e.g. 47200" inputmode="numeric" />
+      </div>
+      <div class="setting-row">
+        <div class="setting-label">Mileage at Last Oil Change</div>
+        <input class="setting-input" type="number" id="s-oil-mi" placeholder="e.g. 45000" inputmode="numeric" />
+      </div>
+      <div class="setting-row">
+        <div class="setting-label">Oil Change Interval (miles)</div>
+        <input class="setting-input" type="number" id="s-oil-int" placeholder="5000" inputmode="numeric" />
+      </div>
+      <div class="setting-row">
+        <div class="setting-label">Mileage at Last Tire Rotation</div>
+        <input class="setting-input" type="number" id="s-tire-mi" placeholder="e.g. 43000" inputmode="numeric" />
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-head"><span class="card-head-title">Dates</span></div>
+      <div class="setting-row">
+        <div class="setting-label">Registration Expiration</div>
+        <input class="setting-input" type="date" id="s-reg" />
+      </div>
+      <div class="setting-row">
+        <div class="setting-label">Insurance Expiration</div>
+        <input class="setting-input" type="date" id="s-ins" />
+      </div>
+      <div class="setting-row">
+        <div class="setting-label">Next Scheduled Service Date</div>
+        <input class="setting-input" type="date" id="s-svc" />
+      </div>
+    </div>
+    <button class="save-btn" onclick="saveSettings()">Save Settings</button>
+    <div class="section-gap"></div>
+  </div>
+
+</div>
+
+<script>
+const KEY = 'fusion_v2';
+const DEFAULTS = {
+  mileage: 105409, lastOilMi: 105409, oilInt: 5000, lastTireMi: 82286,
+  regExp: null, insExp: null, svcDate: null,
+  docs: [
+    {id:'title', label:'Title secured at home', note:'Never leave in the car', done:false},
+    {id:'reg', label:'Registration in glove box', note:'Must be in vehicle at all times', done:false},
+    {id:'ins-card', label:'Insurance card in glove box', note:'Physical copy or screenshot', done:false},
+    {id:'ins-active', label:'Full coverage confirmed active', note:'Verify with your agent', done:false},
+    {id:'roadside', label:'Roadside kit in trunk', note:'Jumper cables, flares, first aid, phone charger', done:false},
+    {id:'manual', label:'Owner\'s manual located', note:'Glove box or download from Ford\'s site', done:false},
+    {id:'spare', label:'Spare tire & jack verified', note:'Check pressure + confirm lug wrench present', done:false},
+    {id:'washer', label:'Washer fluid topped off', note:'', done:false},
+    {id:'emission', label:'Emissions check (if required)', note:'Indiana: most counties exempt, check yours', done:false},
+    {id:'emergency', label:'Emergency contact card in car', note:'Useful if phone dies', done:false},
+    {id:'recall-brake', label:'Recall 23S12 — brake hose replacement', note:'REMEDY AVAILABLE — schedule at D-Patrick Ford, free parts & labor', done:false},
+    {id:'recall-door', label:'Recall 20R01 — door latch replacement', note:'REMEDY AVAILABLE — schedule at D-Patrick Ford, free', done:false},
+    {id:'recall-shift', label:'Recall 25B61 — shift cable bushing', note:'REMEDY AVAILABLE — schedule at D-Patrick Ford, free', done:false},
+    {id:'recall-camera', label:'Recall 25SA9 — rear view camera', note:'No remedy yet — Ford will mail you when parts are ready', done:false},
+    {id:'recall-takata', label:'Recall 19K02 — Takata airbag (verify status)', note:'Ask D-Patrick to check if this was completed by prior owner', done:false},
+  ],
+  budget: {payment:0, insurance:0, fuel:0, maintenance:0, parking:0, other:0},
+  fuelLog: [],
+  logEntries: [
+    {date:'Aug 27, 2025', note:'Oil & filter changed — Best-One Tire & Service, Vincennes IN · 105,409 mi'},
+    {date:'Oct 6, 2023', note:'Tire mounted, balanced & replaced (1 tire) — Best One Tire & Service, Vincennes IN · 82,286 mi'},
+    {date:'Dec 20, 2022', note:'Tire(s) replaced — Walmart Auto Care, Vincennes IN · 71,263 mi'},
+    {date:'May 10, 2022', note:'Oil change + brakes checked — Silverthorne Ford, Robinson IL · 64,622 mi'},
+    {date:'Feb 15, 2021', note:'Oil change + maintenance inspection — Silverthorne Ford, Robinson IL · 52,173 mi'},
+    {date:'Feb 7, 2020', note:'Oil change + maintenance inspection — Silverthorne Ford, Robinson IL · 44,318 mi'},
+    {date:'Jun 21, 2019', note:'Oil change + maintenance inspection — Silverthorne Ford, Robinson IL · 36,772 mi'},
+    {date:'Oct 10, 2018', note:'Oil change + maintenance inspection — Silverthorne Ford, Robinson IL · 27,205 mi'},
+    {date:'Jul 25, 2018', note:'Oil change + maintenance inspection — Silverthorne Ford, Robinson IL · 24,735 mi'},
+    {date:'Mar 30, 2018', note:'Alignment checked & performed — Silverthorne Chevrolet, Robinson IL · 20,734 mi'},
+    {date:'Mar 6, 2018', note:'Minor damage reported — left front (cosmetic). Followed by alignment correction.'},
+    {date:'Jan 11, 2018', note:'Oil change + maintenance inspection — Silverthorne Ford, Robinson IL · 19,518 mi'},
+    {date:'Aug 29, 2017', note:'Oil change + maintenance inspection — Silverthorne Ford, Robinson IL · 15,088 mi'},
+  ]
+};
+let S = JSON.parse(JSON.stringify(DEFAULTS));
+
+function load() { try { const r = localStorage.getItem(KEY); if (r) { const sv = JSON.parse(r); S = {...S, ...sv, docs: sv.docs||S.docs, logEntries: sv.logEntries||S.logEntries, fuelLog: sv.fuelLog||S.fuelLog}; } } catch(e){} }
+function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e){} }
+
+function switchTab(name) {
+  const names = ['maint','docs','budget','fuel','log','settings'];
+  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', names[i] === name));
+  document.querySelectorAll('.section').forEach(s => s.classList.toggle('active', s.id === name));
+}
+
+function daysUntil(ds) {
+  if (!ds) return null;
+  return Math.round((new Date(ds) - new Date()) / 86400000);
+}
+
+function pct(used, total) { return Math.min(100, Math.max(0, Math.round((used/total)*100))); }
+
+function statusClass(remaining, warnAt) {
+  if (remaining <= 0) return 'danger';
+  if (remaining <= warnAt) return 'warn';
+  return 'ok';
+}
+
+function renderHeader() {
+  document.getElementById('h-mi').textContent = S.mileage ? S.mileage.toLocaleString() + ' mi' : '—';
+
+  // Oil metric
+  const oilEl = document.getElementById('m-oil');
+  const oilSub = document.getElementById('m-oil-sub');
+  if (S.mileage && S.lastOilMi) {
+    const next = S.lastOilMi + (S.oilInt || 5000);
+    const rem = next - S.mileage;
+    oilEl.textContent = rem <= 0 ? 'OVERDUE' : rem.toLocaleString() + ' mi';
+    oilEl.className = 'metric-val ' + statusClass(rem, 1000);
+    oilSub.textContent = 'due at ' + next.toLocaleString();
+  } else { oilEl.textContent = '—'; oilEl.className = 'metric-val'; oilSub.textContent = 'set mileage'; }
+
+  // Reg metric
+  const regEl = document.getElementById('m-reg');
+  const regSub = document.getElementById('m-reg-sub');
+  if (S.regExp) {
+    const d = daysUntil(S.regExp);
+    regEl.textContent = d < 0 ? 'EXPIRED' : d + 'd';
+    regEl.className = 'metric-val ' + statusClass(d, 30);
+    regSub.textContent = new Date(S.regExp).toLocaleDateString('en-US', {month:'short', day:'numeric', year:'2-digit'});
+  } else { regEl.textContent = '—'; regEl.className = 'metric-val'; regSub.textContent = 'not set'; }
+
+  // Cost
+  const total = Object.values(S.budget).reduce((a,b)=>a+(parseFloat(b)||0),0);
+  document.getElementById('m-cost').textContent = '$' + Math.round(total).toLocaleString();
+}
+
+function renderMaint() {
+  const mi = S.mileage || 0;
+  const oilInt = S.oilInt || 5000;
+  const items = [
+    {name:'Oil & filter', int:oilInt, lastMi: S.lastOilMi||0},
+    {name:'Tire rotation', int:7500, lastMi: S.lastTireMi||0},
+    {name:'Cabin air filter', int:15000, lastMi:0},
+    {name:'Engine air filter', int:30000, lastMi:0},
+    {name:'Brake fluid', int:30000, lastMi:0},
+    {name:'Spark plugs (iridium)', int:60000, lastMi:0},
+    {name:'Transmission fluid', int:60000, lastMi:0},
+    {name:'Coolant flush', int:60000, lastMi:0},
+    {name:'Timing belt check', int:90000, lastMi:0},
+  ];
+  document.getElementById('maint-list').innerHTML = items.map(item => {
+    const next = item.lastMi + item.int;
+    const rem = next - mi;
+    const used = mi - item.lastMi;
+    const p = item.lastMi > 0 || mi > 0 ? pct(used, item.int) : 0;
+    const sc = statusClass(rem, Math.round(item.int * 0.1));
+    const label = rem <= 0 ? 'Overdue' : rem < 1000 ? rem + ' mi' : rem.toLocaleString() + ' mi';
+    return `<div class="maint-row">
+      <div class="maint-info">
+        <div class="maint-name">${item.name}</div>
+        <div class="maint-int">every ${item.int.toLocaleString()} mi</div>
+        <div class="maint-bar"><div class="maint-fill fill-${sc}" style="width:${p}%"></div></div>
+      </div>
+      <span class="badge badge-${sc}">${label}</span>
+    </div>`;
+  }).join('');
+}
+
+function renderDocs() {
+  const done = S.docs.filter(d=>d.done).length;
+  document.getElementById('docs-count').textContent = done + '/' + S.docs.length;
+  document.getElementById('doc-list').innerHTML = S.docs.map((d,i)=>`
+    <div class="doc-row" onclick="toggleDoc(${i})">
+      <div class="check ${d.done?'done':''}"><span class="check-icon">✓</span></div>
+      <div class="doc-text">
+        <div class="doc-label ${d.done?'done':''}">${d.label}</div>
+        ${d.note ? `<div class="doc-note">${d.note}</div>` : ''}
+      </div>
+    </div>
+  `).join('');
+}
+
+function toggleDoc(i) {
+  S.docs[i].done = !S.docs[i].done;
+  save(); renderDocs();
+}
+
+function renderBudget() {
+  const fields = [
+    {key:'payment', label:'Car payment'},
+    {key:'insurance', label:'Insurance'},
+    {key:'fuel', label:'Fuel (est.)'},
+    {key:'maintenance', label:'Maintenance reserve'},
+    {key:'parking', label:'Parking / tolls'},
+    {key:'other', label:'Other'},
+  ];
+  document.getElementById('budget-list').innerHTML = fields.map(f=>`
+    <div class="budget-row">
+      <span class="budget-label">${f.label}</span>
+      <div class="budget-input-wrap">
+        <span class="budget-symbol">$</span>
+        <input class="budget-input" type="number" placeholder="0" inputmode="decimal"
+          value="${S.budget[f.key]||''}"
+          oninput="S.budget['${f.key}']=parseFloat(this.value)||0;save();updateBudgetTotal();" />
+      </div>
+    </div>
+  `).join('');
+  updateBudgetTotal();
+}
+
+function updateBudgetTotal() {
+  const t = Object.values(S.budget).reduce((a,b)=>a+(parseFloat(b)||0),0);
+  document.getElementById('budget-total').textContent = '$' + Math.round(t).toLocaleString();
+  document.getElementById('m-cost').textContent = '$' + Math.round(t).toLocaleString();
+}
+
+function logFuel() {
+  const gal = parseFloat(document.getElementById('f-gal').value);
+  const price = parseFloat(document.getElementById('f-price').value);
+  const odo = parseInt(document.getElementById('f-odo').value)||null;
+  const totalInput = parseFloat(document.getElementById('f-total').value);
+  if (!gal && !totalInput) return;
+  const total = totalInput || (gal * price);
+  const entry = { date: new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'2-digit'}), gal, price, total, odo };
+  S.fuelLog.unshift(entry);
+  if (odo && (!S.mileage || odo > S.mileage)) { S.mileage = odo; }
+  save(); renderFuelLog(); renderHeader();
+  ['f-gal','f-price','f-odo','f-total'].forEach(id => document.getElementById(id).value='');
+}
+
+function renderFuelLog() {
+  const el = document.getElementById('fuel-log');
+  if (!S.fuelLog.length) { el.innerHTML='<div class="empty-state">No fill-ups yet</div>'; document.getElementById('fuel-avg').textContent=''; return; }
+  el.innerHTML = S.fuelLog.slice(0,20).map(e=>
+    `<div class="log-entry">
+      <span class="log-note">${e.gal ? e.gal.toFixed(1)+'gal @ $'+e.price.toFixed(2) : ''}${e.odo?' · '+e.odo.toLocaleString()+' mi':''}</span>
+      <span class="log-date">${e.date}<br><span style="color:var(--accent)">$${e.total.toFixed(2)}</span></span>
+    </div>`
+  ).join('');
+  const avg = S.fuelLog.reduce((a,e)=>a+e.total,0)/S.fuelLog.length;
+  document.getElementById('fuel-avg').textContent = 'avg $'+avg.toFixed(2)+'/fill';
+}
+
+function addLog() {
+  const note = document.getElementById('log-note').value.trim();
+  if (!note) return;
+  S.logEntries.unshift({date: new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'2-digit'}), note});
+  save(); renderLogList();
+  document.getElementById('log-note').value='';
+}
+
+function renderLogList() {
+  const el = document.getElementById('log-list');
+  if (!S.logEntries.length) { el.innerHTML='<div class="empty-state">No entries yet</div>'; return; }
+  el.innerHTML = S.logEntries.map(e=>`
+    <div class="log-entry">
+      <span class="log-note">${e.note}</span>
+      <span class="log-date">${e.date}</span>
+    </div>
+  `).join('');
+}
+
+function loadSettingsForm() {
+  if (S.mileage) document.getElementById('s-mi').value = S.mileage;
+  if (S.lastOilMi) document.getElementById('s-oil-mi').value = S.lastOilMi;
+  document.getElementById('s-oil-int').value = S.oilInt || 5000;
+  if (S.lastTireMi) document.getElementById('s-tire-mi').value = S.lastTireMi;
+  if (S.regExp) document.getElementById('s-reg').value = S.regExp;
+  if (S.insExp) document.getElementById('s-ins').value = S.insExp;
+  if (S.svcDate) document.getElementById('s-svc').value = S.svcDate;
+}
+
+function saveSettings() {
+  S.mileage = parseInt(document.getElementById('s-mi').value)||null;
+  S.lastOilMi = parseInt(document.getElementById('s-oil-mi').value)||null;
+  S.oilInt = parseInt(document.getElementById('s-oil-int').value)||5000;
+  S.lastTireMi = parseInt(document.getElementById('s-tire-mi').value)||null;
+  S.regExp = document.getElementById('s-reg').value||null;
+  S.insExp = document.getElementById('s-ins').value||null;
+  S.svcDate = document.getElementById('s-svc').value||null;
+  save(); renderAll(); switchTab('maint');
+}
+
+// Auto-calc fuel total
+document.addEventListener('DOMContentLoaded', ()=>{
+  ['f-gal','f-price'].forEach(id=>{
+    document.getElementById(id).addEventListener('input', ()=>{
+      const g = parseFloat(document.getElementById('f-gal').value);
+      const p = parseFloat(document.getElementById('f-price').value);
+      if (g && p) document.getElementById('f-total').value = (g*p).toFixed(2);
+    });
+  });
+
+  // iOS install prompt
+  const isIOS = /iphone|ipad|ipod/.test(navigator.userAgent.toLowerCase());
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+  if (isIOS && !isStandalone) document.getElementById('install-banner').style.display='block';
+});
+
+function renderAll() {
+  renderHeader(); renderMaint(); renderDocs(); renderBudget(); renderFuelLog(); renderLogList();
+}
+
+load(); renderAll(); loadSettingsForm();
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(()=>{});
+}
+</script>
+</body>
+</html>
